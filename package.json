@@ -7,23 +7,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.13.3"
-  },
-  "engines": {
-    "node": "4.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/heroku/node-js-sample"
-  },
-  "keywords": [
-    "node",
-    "heroku",
-    "express"
-  ],
-  "author": "Mark Pundsack",
-  "contributors": [
-    "Zeke Sikelianos <zeke@sikelianos.com> (http://zeke.sikelianos.com)"
-  ],
-  "license": "MIT"
+    "express": "^4.15.2",
+    "jquery": "^3.2.1",
+    "phaser-ce": "^2.9.3",
+    "socket.io": "^2.0.4"
+  }
 }
