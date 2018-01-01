@@ -1,0 +1,897 @@
+<!doctype html>
+<html>
+<head>
+    <title>Socket.IO</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser-ce/2.9.3/phaser.min.js"></script>
+    <script src="HealthBar.standalone.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            overflow: hidden;
+            color: white;
+        }
+
+        tr {
+            cursor: pointer;
+        }
+
+        .center {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            margin-top: -250px;
+            margin-left: -300px;
+            width: 500px;
+            height: 500px;
+        }
+
+        .dark-cell {
+            background-color: #382d27;
+        }
+
+        .light-cell {
+            background-color: white;
+        }
+
+    </style>
+</head>
+<body background="assets/games/tanks/scorched_earth.png">
+<div id="loginDiv" class="center"
+     style="border-style: solid; border-width: 5px; border-radius: 12px; padding: 10px; background-color: #4c4039; border-color: transparent">
+    <h3>Rooms</h3>
+    <div style="height: 300px; border-style: solid; border-width: 5px; border-radius: 12px; border-color: #382d27; padding: 10px">
+        <table id="roomsTable" style="width:100%;">
+            <tr>
+                <th>Room Name</th>
+                <th>Players</th>
+                <th>Pass</th>
+            </tr>
+        </table>
+    </div>
+    <input id="joinRoomButton" type="button" class="btn btn-default btn-primary" value="Join Room"
+           style="position: absolute; right: 10px; bottom: 10px;"/>
+</div>
+<!--<div id="ads">-->
+    <!--<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>-->
+    <!--&lt;!&ndash; Heroku &ndash;&gt;-->
+    <!--<ins class="adsbygoogle"-->
+         <!--style="display:inline-block;width:300px;height:600px"-->
+         <!--data-ad-client="ca-pub-8756580042748256"-->
+         <!--data-ad-slot="2738555669"></ins>-->
+    <!--<script>-->
+        <!--(adsbygoogle = window.adsbygoogle || []).push({});-->
+    <!--</script>-->
+<!--</div>-->
+<div id="area"></div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+    var socket = io();
+    var clientId = null;
+    var isHost = false;
+    var game;
+    var initialPlayer;
+
+    socket.on('roomList', function (roomList) {
+        //Get room list and update room list table...
+        var roomsTable = document.getElementById("roomsTable").getElementsByTagName('tbody')[0];
+        while (roomsTable.childNodes.length > 2) {
+            roomsTable.removeChild(roomsTable.lastChild);
+        }
+
+        for (var i = 0; i < roomList.length; i++) {
+            roomsTable.insertAdjacentHTML("beforeend", "<tr room='" + roomList[i].name + "' class='clickable-row' data-href='url://'><td>" + roomList[i].name + "</td><td>" + roomList[i].playerSize + "/4" + "</td><td>No</td></tr>");
+        }
+        $(".clickable-row").click(function () {
+            $(this).addClass("dark-cell").siblings().removeClass("dark-cell");
+        });
+    });
+
+    jQuery(document).ready(function ($) {
+        socket.emit('roomList', '');
+
+    });
+
+    $("#joinRoomButton").click(function () {
+        var roomName = $(".dark-cell").attr('room');
+        socket.emit('joinRoom', roomName);
+    });
+
+    socket.on('connect', function () {
+        clientId = socket.id;
+    });
+
+    socket.on('startGame', function (player) {
+
+        $('#ads').hide();
+
+        initialPlayer = player;
+
+        game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, 'area', {
+            preload: preload,
+            create: create,
+            update: update,
+            render: render
+        });
+
+        $("#loginDiv").css('display', 'none');
+
+    });
+
+
+    function preload() {
+
+        //Disable browser focus control.
+        game.stage.disableVisibilityChange = true;
+
+        game.load.image('tank', 'assets/games/enemies/enemy1.png');
+        game.load.image('tank1', 'assets/games/enemies/enemy1.png');
+        game.load.image('logo', 'assets/games/tanks/logo.png');
+        game.load.image('earth', 'assets/games/background/ground.png');
+        game.load.spritesheet('kaboom', 'assets/games/tanks/explosion.png', 64, 64, 23);
+
+        game.load.image('firespeed', 'assets/games/menu/firespeed.png');
+        game.load.image('weapon', 'assets/games/menu/weapon.png');
+        game.load.image('health', 'assets/games/menu/health.png');
+        game.load.image('movespeed', 'assets/games/menu/movespeed.png');
+
+        game.load.image('bullet1', 'assets/games/bullets/bullet1.png');
+        game.load.image('bullet2', 'assets/games/bullets/bullet2.png');
+        game.load.image('bullet3', 'assets/games/bullets/bullet3.png');
+        game.load.image('bullet4', 'assets/games/bullets/bullet4.png');
+        game.load.image('bullet5', 'assets/games/bullets/bullet5.png');
+        game.load.image('bullet6', 'assets/games/bullets/bullet6.png');
+        game.load.image('bullet7', 'assets/games/bullets/bullet7.png');
+        game.load.image('bullet8', 'assets/games/bullets/bullet8.png');
+        game.load.image('bullet9', 'assets/games/bullets/bullet9.png');
+        game.load.image('bullet10', 'assets/games/bullets/bullet10.png');
+        game.load.image('bullet11', 'assets/games/bullets/bullet11.png');
+        game.load.image('bullet12', 'assets/games/bullets/bullet12.png');
+        game.load.image('bullet13', 'assets/games/bullets/bullet13.png');
+        game.load.image('bullet14', 'assets/games/bullets/bullet14.png');
+        game.load.image('bullet15', 'assets/games/bullets/bullet15.png');
+        game.load.image('bullet16', 'assets/games/bullets/bullet16.png');
+        game.load.image('bullet17', 'assets/games/bullets/bullet17.png');
+        game.load.image('bullet18', 'assets/games/bullets/bullet18.png');
+        game.load.image('bullet19', 'assets/games/bullets/bullet19.png');
+        game.load.image('bullet20', 'assets/games/bullets/bullet20.png');
+        game.load.image('bullet21', 'assets/games/bullets/bullet21.png');
+        game.load.image('bullet22', 'assets/games/bullets/bullet22.png');
+        game.load.image('bullet23', 'assets/games/bullets/bullet23.png');
+        game.load.image('bullet24', 'assets/games/bullets/bullet24.png');
+        game.load.image('bullet25', 'assets/games/bullets/bullet25.png');
+        game.load.image('bullet26', 'assets/games/bullets/bullet26.png');
+        game.load.image('bullet27', 'assets/games/bullets/bullet27.png');
+        game.load.image('bullet28', 'assets/games/bullets/bullet28.png');
+        game.load.image('bullet29', 'assets/games/bullets/bullet29.png');
+        game.load.image('bullet30', 'assets/games/bullets/bullet30.png');
+        game.load.image('bullet31', 'assets/games/bullets/bullet31.png');
+        game.load.image('bullet32', 'assets/games/bullets/bullet32.png');
+        game.load.image('bullet33', 'assets/games/bullets/bullet33.png');
+        game.load.image('bullet34', 'assets/games/bullets/bullet34.png');
+        game.load.image('bullet35', 'assets/games/bullets/bullet35.png');
+        game.load.image('bullet36', 'assets/games/bullets/bullet36.png');
+        game.load.image('bullet37', 'assets/games/bullets/bullet37.png');
+        game.load.image('bullet38', 'assets/games/bullets/bullet38.png');
+        game.load.image('bullet39', 'assets/games/bullets/bullet39.png');
+        game.load.image('bullet40', 'assets/games/bullets/bullet40.png');
+
+        game.load.image('enemy1', 'assets/games/enemies/enemy1.png');
+        game.load.image('enemy2', 'assets/games/enemies/enemy2.png');
+        game.load.image('enemy3', 'assets/games/enemies/enemy3.png');
+        game.load.image('enemy4', 'assets/games/enemies/enemy4.png');
+        game.load.image('enemy5', 'assets/games/enemies/enemy5.png');
+        game.load.image('enemy6', 'assets/games/enemies/enemy6.png');
+        game.load.image('enemy7', 'assets/games/enemies/enemy7.png');
+        game.load.image('enemy8', 'assets/games/enemies/enemy8.png');
+        game.load.image('enemy9', 'assets/games/enemies/enemy9.png');
+        game.load.image('enemy10', 'assets/games/enemies/enemy10.png');
+        game.load.image('enemy11', 'assets/games/enemies/enemy11.png');
+        game.load.image('enemy12', 'assets/games/enemies/enemy12.png');
+        game.load.image('enemy13', 'assets/games/enemies/enemy13.png');
+        game.load.image('enemy14', 'assets/games/enemies/enemy14.png');
+        game.load.image('enemy15', 'assets/games/enemies/enemy15.png');
+        game.load.image('enemy16', 'assets/games/enemies/enemy16.png');
+        game.load.image('enemy17', 'assets/games/enemies/enemy17.png');
+        game.load.image('enemy18', 'assets/games/enemies/enemy18.png');
+        game.load.image('enemy19', 'assets/games/enemies/enemy19.png');
+
+    }
+
+    var land;
+
+    var tank;
+    var friends;
+
+    var enemies;
+    var enemiesTotal = 0;
+    var enemiesAlive = 0;
+    var explosions;
+
+    var logo;
+
+    var cursors;
+
+    var currentRound = 1;
+
+    function create() {
+
+        //  Resize our game world to be a 2000 x 2000 square
+        game.world.setBounds(-1000, -1000, 2000, 2000);
+
+        //  Our tiled scrolling background
+        land = game.add.tileSprite(0, 0, $(window).width(), $(window).height(), 'earth');
+        land.fixedToCamera = true;
+
+        //  The base of our tank
+        tank = new FriendlyTank(game, initialPlayer);
+
+        // //  Create some baddies to waste :)
+        enemies = game.add.group();
+
+        friends = [];
+
+
+        //  Explosion pool
+        explosions = game.add.group();
+
+        for (var i = 0; i < 10; i++) {
+            var explosionAnimation = explosions.create(0, 0, 'kaboom', [0], false);
+            explosionAnimation.anchor.setTo(0.5, 0.5);
+            explosionAnimation.animations.add('kaboom');
+        }
+
+        tank.tank.bringToTop();
+
+        showRoundInfo();
+
+        game.camera.follow(tank.tank);
+        game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
+        game.camera.focusOnXY(0, 0);
+
+        cursors = game.input.keyboard.createCursorKeys();
+
+        upKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
+        downKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
+        leftKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
+        rightKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
+
+        socket.emit('playerReady', '');
+
+    }
+
+    function render() {
+        game.debug.text('Enemies: ' + enemiesAlive + ' / ' + enemiesTotal + '  Round: ' + currentRound, 32, 32);
+        game.debug.text('Health: ' + tank.health, 32, 64);
+        game.debug.text('FireRate: ' + tank.fireRate, 32, 84);
+        game.debug.text('Movement Speed: ' + tank.SPEED, 32, 104);
+        game.debug.text('Weapon: ' + tank.bullet.name, 32, 124);
+        game.debug.text('DPS: ' + tank.bullet.damage, 32, 144);
+    }
+
+    function update() {
+
+        tank.healthBar.setPosition(tank.tank.x, tank.tank.y - tank.tank.height / 2);
+
+        game.physics.arcade.overlap(enemies, tank.tank, enemyTankHitPlayer, null, this);
+
+        enemiesAlive = 0;
+
+        enemies.forEachAlive(function (enemyTank) {
+            if (enemyTank.alive) {
+                enemiesAlive++;
+                game.physics.arcade.collide(tank, enemyTank);
+                game.physics.arcade.overlap(tank.bullets, enemyTank, bulletHitEnemy, null, this);
+                enemyTank.update();
+            }
+        });
+
+        if (enemiesAlive == 0) {
+            //next round
+        }
+
+        tank.tank.body.velocity.x = 0;
+        tank.tank.body.velocity.y = 0;
+
+
+        if (cursors.left.isDown || leftKey.isDown) {
+            tank.tank.body.velocity.x -= tank.SPEED;
+        }
+        if (cursors.right.isDown || rightKey.isDown) {
+            tank.tank.body.velocity.x = tank.SPEED;
+        }
+        if (cursors.up.isDown || upKey.isDown) {
+            tank.tank.body.velocity.y -= tank.SPEED;
+        }
+        if (cursors.down.isDown || downKey.isDown) {
+            tank.tank.body.velocity.y = tank.SPEED;
+        }
+
+        if (tank.tank.body.velocity.x != 0 || tank.tank.body.velocity.y != 0) {
+            socket.emit('playerMove', {x: tank.tank.x, y: tank.tank.y});
+        }
+
+        land.tilePosition.x = -game.camera.x;
+        land.tilePosition.y = -game.camera.y;
+
+        tank.tank.rotation = game.physics.arcade.angleToPointer(tank.tank);
+
+        if (game.input.activePointer.isDown && tank.alive) {
+            //  Boom!
+            fire();
+        }
+
+    }
+
+    socket.on('isHost', function () {
+        isHost = true;
+    });
+
+    socket.on('playerMove', function (data) {
+        var playerPosition = data.playerPosition;
+        var playerId = data.playerId;
+
+        for (var i = 0; i < friends.length; i++) {
+            if (friends[i].playerTank.alive && friends[i].playerTank.tank.name == playerId) {
+                friends[i].playerTank.tank.x = playerPosition.x;
+                friends[i].playerTank.tank.y = playerPosition.y;
+                friends[i].playerTank.healthBar.setPosition(playerPosition.x, playerPosition.y - friends[i].playerTank.tank.height / 2);
+            }
+        }
+
+
+    });
+
+    socket.on('playerFire', function (data) {
+        var positionData = data.positionData;
+        var playerId = data.playerId;
+        for (var i = 0; i < friends.length; i++) {
+            if (friends[i].playerTank.alive && friends[i].playerTank.tank.name == playerId) {
+                var bullet = friends[i].playerTank.bullets.getFirstExists(false);
+                bullet.reset(positionData.playerX, positionData.playerY);
+                bullet.rotation = game.physics.arcade.moveToXY(bullet, positionData.mouseX, positionData.mouseY, 1000);
+            }
+        }
+    });
+
+    var healthButton;
+    var weaponButton;
+    var moveSpeedButton;
+    var fireSpeedButton;
+    socket.on('playerLevelUp', function (data) {
+        if (healthButton == null || !healthButton.alive) {
+            healthButton = game.add.button(game.world.centerX, game.world.centerY + ($(window).height() / 5), 'health', selectPowerUp, this, 2, 1, 0);
+            healthButton.name = "health";
+            healthButton.fixedToCamera = true;
+            weaponButton = game.add.button(game.world.centerX, game.world.centerY + ($(window).height() / 5) + 40, 'weapon', selectPowerUp, this, 2, 1, 0);
+            weaponButton.name = "weapon";
+            weaponButton.fixedToCamera = true;
+            moveSpeedButton = game.add.button(game.world.centerX, game.world.centerY + ($(window).height() / 5) + 80, 'movespeed', selectPowerUp, this, 2, 1, 0);
+            moveSpeedButton.name = "moveSpeed";
+            moveSpeedButton.fixedToCamera = true;
+            fireSpeedButton = game.add.button(game.world.centerX, game.world.centerY + ($(window).height() / 5) + 120, 'firespeed', selectPowerUp, this, 2, 1, 0);
+            fireSpeedButton.name = "fireSpeed";
+            fireSpeedButton.fixedToCamera = true;
+        }
+    });
+
+    function selectPowerUp(button) {
+
+        var powerUp = button.name;
+
+        socket.emit('playerLevelUp', powerUp);
+        destroyAllButtons();
+    };
+
+    function destroyAllButtons() {
+        healthButton.pendingDestroy = true;
+        weaponButton.pendingDestroy = true;
+        moveSpeedButton.pendingDestroy = true;
+        fireSpeedButton.pendingDestroy = true;
+    }
+
+    //Get Current Round Info
+    socket.on('currentRound', function (roundData) {
+        var enemyList = roundData.enemyList;
+        currentRound = roundData.currentRound;
+        var roomPlayers = roundData.friends;
+
+        updateFriends(roomPlayers);
+
+        enemiesTotal = enemyList.length;
+        enemiesAlive = enemyList.length;
+
+        enemies.forEachAlive(function (enemyTank) {
+            enemyTank.kill();
+            enemyTank.healthBar.kill();
+        });
+
+        for (var i = 0; i < enemyList.length; i++) {
+            createEnemyTank(enemyList[i]);
+        }
+    });
+
+    function updateFriends(roomPlayers) {
+        for (var i = 0; i < roomPlayers.length; i++) {
+            if (roomPlayers[i].playerId == clientId) {
+                tank.update(roomPlayers[i]);
+                continue;
+            }
+            for (var j = 0; j < friends.length; j++) {
+                if (roomPlayers[i].playerId == friends[j].playerId) {
+                    friends[j].playerTank.update(roomPlayers[i]);
+                    break;
+                }
+            }
+            friends.push({playerId: roomPlayers[i].playerId, playerTank: new FriendlyTank(game, roomPlayers[i])});
+        }
+    };
+
+    socket.on('updateRoomPlayers', function (roomPlayers) {
+        updateFriends(roomPlayers);
+    });
+
+    socket.on('newPlayer', function (player) {
+        friends.push({playerId: player.playerId, playerTank: new FriendlyTank(game, player)});
+    });
+
+    socket.on('disconnectedPlayer', function (playerId) {
+        friends = friends.filter(function (friend) {
+            if (friend.playerId == playerId) {
+                friend.playerTank.tank.kill();
+            }
+            return friend.playerId !== playerId;
+        });
+    });
+
+    socket.on('enemyMove', function (data) {
+        var id = data.id;
+        var enemyPositionX = data.x;
+        var enemyPositionY = data.y;
+
+        if (enemies != null) {
+            enemies.forEachAlive(function (enemyTank) {
+                if (enemyTank.alive && enemyTank.id == id) {
+                    enemyTank.x = enemyPositionX;
+                    enemyTank.y = enemyPositionY;
+                    enemyTank.healthBar.setPosition(enemyPositionX, enemyPositionY);
+                }
+            });
+        }
+    });
+
+    socket.on('enemyDamaged', function (enemy) {
+        enemies.forEachAlive(function (enemyTank) {
+            if (enemyTank.alive && enemyTank.id == enemy.id) {
+                enemyTank.health = enemy.health;
+                var healthPercent = (enemyTank.health / enemyTank.maxHealth) * 100;
+                if (healthPercent >= 60) {
+                    enemyTank.healthBar.setBarColor('#24de44');
+                } else if (healthPercent >= 20 && healthPercent <= 59) {
+                    enemyTank.healthBar.setBarColor('#FEFF03');
+                } else {
+                    enemyTank.healthBar.setBarColor('#da7676');
+                }
+                enemyTank.healthBar.setPercent(healthPercent);
+            }
+        });
+    });
+
+    socket.on('enemyDestroyed', function (enemy) {
+
+        enemies.forEachAlive(function (enemyTank) {
+            if (enemyTank.alive && enemyTank.id == enemy.id) {
+                enemyTank.healthBar.kill();
+                enemyTank.kill();
+            }
+        });
+
+        var explosionAnimation = explosions.getFirstExists(false);
+        explosionAnimation.reset(enemy.x, enemy.y);
+        explosionAnimation.play('kaboom', 30, false, true);
+
+    });
+
+    socket.on('playerDestroyed', function (playerId) {
+
+        var player;
+        for(var i = 0; i < friends.length; i++){
+            if(friends[i].id == playerId){
+                player = friends[i];
+            }
+        }
+
+        if(clientId == playerId){
+            player = tank;
+        }
+
+        player.healthBar.kill();
+        player.tank.kill();
+        player.alive = false;
+
+        var explosionAnimation = explosions.getFirstExists(false);
+        explosionAnimation.reset(player.tank.x, player.tank.y);
+        explosionAnimation.play('kaboom', 30, false, true);
+
+    });
+
+    function showRoundInfo() {
+        logo = game.add.sprite(game.world.centerX, game.world.centerY, 'logo');
+
+        logo.fixedToCamera = true;
+
+        game.input.onDown.add(removeLogo, this);
+    }
+
+    FriendlyTank = function (game, player) {
+
+        var bullets = game.add.group();
+        bullets.enableBody = true;
+        bullets.physicsBodyType = Phaser.Physics.ARCADE;
+        bullets.createMultiple(100, 'bullet' + player.bullet.level, 0, false);
+        bullets.setAll('anchor.x', 0.5);
+        bullets.setAll('anchor.y', 0.5);
+        bullets.setAll('outOfBoundsKill', true);
+        bullets.setAll('checkWorldBounds', true);
+
+        this.bullets = bullets;
+
+        this.game = game;
+        this.health = player.health;
+        this.fireRate = player.fireRate;
+        this.nextFire = player.nextFire;
+        this.alive = player.alive;
+        this.SPEED = player.SPEED; // missile speed pixels/second
+        this.bullet = player.bullet;
+        this.maxHealth = player.maxHealth;
+
+        var barConfig = {
+            width: 50,
+            height: 6,
+            x: player.x,
+            y: player.y,
+            bg: {
+                color: '#651828'
+            },
+            bar: {
+                color: '#24de44'
+            },
+            animationDuration: 200,
+            flipped: false
+        };
+
+        this.healthBar = new HealthBar(this.game, barConfig);
+
+
+        //  The base of friendly tank
+        this.tank = game.add.sprite(player.x, player.y, 'tank', 'tank1');
+        this.tank.name = player.playerId;
+        this.tank.anchor.setTo(0.5, 0.5);
+        this.tank.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
+
+        //  This will force it to decelerate and limit its speed
+        game.physics.enable(this.tank, Phaser.Physics.ARCADE);
+        this.tank.body.drag.set(0.2);
+        this.tank.body.maxVelocity.setTo(400, 400);
+        this.tank.body.collideWorldBounds = true;
+    };
+
+    FriendlyTank.prototype.update = function (player) {
+
+        this.bullets.pendingDestroy = true;
+
+        var bullets = game.add.group();
+        bullets.enableBody = true;
+        bullets.physicsBodyType = Phaser.Physics.ARCADE;
+        bullets.createMultiple(100, 'bullet' + player.bullet.level, 0, false);
+        bullets.setAll('anchor.x', 0.5);
+        bullets.setAll('anchor.y', 0.5);
+        bullets.setAll('outOfBoundsKill', true);
+        bullets.setAll('checkWorldBounds', true);
+
+        this.bullets = bullets;
+
+        this.health = player.health;
+        this.fireRate = player.fireRate;
+        this.nextFire = player.nextFire;
+        this.alive = player.alive;
+        this.SPEED = player.SPEED; // missile speed pixels/second
+        this.bullet = player.bullet;
+
+        var healthPercent = (this.health / this.maxHealth) * 100;
+        if (healthPercent >= 60) {
+            this.healthBar.setBarColor('#24de44');
+        } else if (healthPercent >= 20 && healthPercent <= 59) {
+            this.healthBar.setBarColor('#FEFF03');
+        } else {
+            this.healthBar.setBarColor('#da7676');
+        }
+        this.healthBar.setPercent(healthPercent);
+    };
+
+    var EnemyTank = function (game, player, enemy) {
+
+        this.id = enemy.id;
+        var x = enemy.x;
+        var y = enemy.y;
+
+        Phaser.Sprite.call(this, game, x, y, 'enemy' + enemy.enemyLevel);
+
+        // Enable physics on the missile
+        this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+        this.game = game;
+        this.health = enemy.health;
+        this.maxHealth = enemy.maxHealth;
+        this.player = player;
+        this.fireRate = enemy.fireRate;
+        this.nextFire = 0;
+        this.alive = enemy.alive;
+
+        // Define constants that affect motion
+        this.SPEED = enemy.SPEED; // missile speed pixels/second
+        this.TURN_RATE = 3; // turn rate in degrees/frame
+        this.WOBBLE_LIMIT = 15; // degrees
+        this.WOBBLE_SPEED = 250; // milliseconds
+        this.AVOID_DISTANCE = 30; // pixels
+        this.nextAttack = 1;  //is Eligible For Attack
+        this.attackFrequency = 1; //Attack frequency seconds
+
+        var barConfig = {
+            width: 50,
+            height: 4,
+            x: enemy.x,
+            y: enemy.y - this.height / 2,
+            bg: {
+                color: '#651828'
+            },
+            bar: {
+                color: '#24de44'
+            },
+            animationDuration: 200,
+            flipped: false
+        };
+
+        this.healthBar = new HealthBar(this.game, barConfig);
+
+        // Create a variable called wobble that tweens back and forth between
+        // -this.WOBBLE_LIMIT and +this.WOBBLE_LIMIT forever
+        this.wobble = this.WOBBLE_LIMIT;
+
+        // Set the pivot point for this sprite to the center
+        this.anchor.setTo(0.5, 0.5);
+
+        this.angle = game.rnd.angle();
+
+    };
+
+    EnemyTank.prototype = Object.create(Phaser.Sprite.prototype);
+    EnemyTank.prototype.constructor = EnemyTank;
+
+
+    EnemyTank.prototype.update = function () {
+
+        if (isHost) {
+
+            // If this missile is dead, don't do any of these calculations
+            // Also, turn off the smoke emitter
+            if (!this.alive) {
+                return;
+            }
+
+            // if (this.game.physics.arcade.distanceBetween(this, this.player) < 300) {
+            //     if (this.game.time.now > this.nextFire && this.bullets.countDead() > 0) {
+            //         this.nextFire = this.game.time.now + this.fireRate;
+            //
+            //         var bullet = this.bullets.getFirstDead();
+            //
+            //         bullet.reset(this.x, this.y);
+            //
+            //         bullet.rotation = this.game.physics.arcade.moveToObject(bullet, this.player, 100);
+            //     }
+            // }
+
+            //find nearest player
+            var nearestPlayerCoordinates = findNearestPlayerCoordinates(this.x, this.y);
+
+            // Calculate the angle from the missile to the mouse cursor game.input.x
+            // and game.input.y are the mouse position; substitute with whatever
+            // target coordinates you need.
+            var targetAngle = this.game.math.angleBetween(
+                this.x, this.y,
+                nearestPlayerCoordinates.x, nearestPlayerCoordinates.y
+            );
+
+            // Add our "wobble" factor to the targetAngle to make the missile wobble
+            // Remember that this.wobble is tweening (above)
+            targetAngle += this.game.math.degToRad(this.wobble);
+
+
+            // Make each missile steer away from other missiles.
+            // Each missile knows the group that it belongs to (missileGroup).
+            // It can calculate its distance from all other missiles in the group and
+            // steer away from any that are too close. This avoidance behavior prevents
+            // all of the missiles from bunching up too tightly and following the
+            // same track.
+            var avoidAngle = 0;
+            this.parent.forEachAlive(function (m) {
+                // Don't calculate anything if the other missile is me
+                if (this == m) return;
+
+                // Already found an avoidAngle so skip the rest
+                if (avoidAngle !== 0) return;
+
+                // Calculate the distance between me and the other missile
+                var distance = this.game.math.distance(this.x, this.y, m.x, m.y);
+
+                // If the missile is too close...
+                if (distance < this.AVOID_DISTANCE) {
+                    // Chose an avoidance angle of 90 or -90 (in radians)
+                    avoidAngle = Math.PI / 2; // zig
+                    if (Phaser.Utils.chanceRoll(50)) avoidAngle *= -1; // zag
+                }
+            }, this);
+
+            // Add the avoidance angle to steer clear of other missiles
+            targetAngle += avoidAngle;
+
+            // Gradually (this.TURN_RATE) aim the missile towards the target angle
+            if (this.rotation !== targetAngle) {
+                // Calculate difference between the current angle and targetAngle
+                var delta = targetAngle - this.rotation;
+
+                // Keep it in range from -180 to 180 to make the most efficient turns.
+                if (delta > Math.PI) delta -= Math.PI * 2;
+                if (delta < -Math.PI) delta += Math.PI * 2;
+
+                if (delta > 0) {
+                    // Turn clockwise
+                    this.angle += this.TURN_RATE;
+                } else {
+                    // Turn counter-clockwise
+                    this.angle -= this.TURN_RATE;
+                }
+
+                // Just set angle to target angle if they are close
+                if (Math.abs(delta) < this.game.math.degToRad(this.TURN_RATE)) {
+                    this.rotation = targetAngle;
+                }
+            }
+
+            // Calculate velocity vector based on this.rotation and this.SPEED
+            this.body.velocity.x = Math.cos(this.rotation) * this.SPEED;
+            this.body.velocity.y = Math.sin(this.rotation) * this.SPEED;
+
+
+            socket.emit('enemyMove', {id: this.id, x: this.x, y: this.y});
+            this.healthBar.setPosition(this.x, this.y - this.height / 2);
+        }
+
+    };
+
+    function findNearestPlayerCoordinates(x, y) {
+
+        var nearestPlayerCoordinates = {x: 0, y: 0};
+        var nearestPlayer = null;
+        var shortestDistance = 999999;
+
+        if (tank.alive) {
+            var nearestPlayerCoordinates = {x: tank.tank.x, y: tank.tank.y};
+            var nearestPlayer = tank;
+            var shortestDistance = Phaser.Math.distance(tank.tank.x, tank.tank.y, x, y);
+        }
+
+        for (var i = 0; i < friends.length; i++) {
+            if (friends[i].playerTank.alive) {
+                var distance = Phaser.Math.distance(friends[i].playerTank.tank.x, friends[i].playerTank.tank.y, x, y);
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    nearestPlayerCoordinates.x = friends[i].playerTank.tank.x;
+                    nearestPlayerCoordinates.y = friends[i].playerTank.tank.y;
+                    nearestPlayer = friends[i].playerTank.tank;
+                }
+            }
+        }
+
+        if (distance <= 50) {
+
+        }
+
+        return nearestPlayerCoordinates;
+    }
+
+    createEnemyTank = function (enemy) {
+
+        // // Get the first dead missile from the missileGroup
+        //var enemyTank = enemies.getFirstDead();
+        var enemyTank = null;
+
+        // If there aren't any available, create a new one
+        if (enemyTank === null) {
+            enemyTank = new EnemyTank(game, tank, enemy);
+            enemies.add(enemyTank);
+        }
+
+        // Revive enemy
+        enemyTank.revive();
+
+        return enemyTank;
+    };
+
+    function fire() {
+
+        if (game.time.now > tank.nextFire && tank.bullets.countDead() > 0) {
+            tank.nextFire = game.time.now + tank.fireRate;
+
+            var bullet = tank.bullets.getFirstExists(false);
+
+            bullet.reset(tank.tank.x, tank.tank.y);
+
+            bullet.rotation = game.physics.arcade.moveToPointer(bullet, 1000, game.input.activePointer);
+
+            socket.emit('playerFire', {
+                playerX: tank.tank.x,
+                playerY: tank.tank.y,
+                mouseX: game.input.mousePointer.worldX,
+                mouseY: game.input.mousePointer.worldY
+            });
+        }
+
+    }
+
+    function bulletHitPlayer(tank, bullet) {
+
+        bullet.kill();
+
+        var destroyed = playerDamage(tank);
+
+        if (destroyed) {
+            var explosionAnimation = explosions.getFirstExists(false);
+            explosionAnimation.reset(tank.tank.x, tank.tank.y);
+            explosionAnimation.play('kaboom', 30, false, true);
+        }
+
+    }
+
+    function enemyTankHitPlayer(tank, enemyTank) {
+
+        socket.emit('enemyHitPlayer', enemyTank.id);
+
+    }
+
+
+    function bulletHitEnemy(tank, bullet) {
+
+        bullet.kill();
+
+        socket.emit('playerHitEnemy', tank.id);
+
+    }
+
+    function removeLogo() {
+
+        game.input.onDown.remove(removeLogo, this);
+        logo.kill();
+
+    }
+
+</script>
+</html>
