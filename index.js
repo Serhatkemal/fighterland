@@ -64,7 +64,6 @@ var Bullet = function (name, damage, level) {
 
 
 Enemy.prototype.attack = function (player) {
-    console.log("attack started:" + this.nextAttack);
     if(this.nextAttack == 1){
         this.nextAttack = 0;
         setTimeout(this.resetNextAttack, this.attackFrequency, this);
@@ -229,7 +228,6 @@ io.on('connection', function (socket) {
     });
 
     socket.on('playerHitEnemy', function (enemyId) {
-        console.log("playerHitEnemy");
         var playerRoom = getRoomByName(socket.room);
         var damagedEnemy;
         for (var i = 0; i < playerRoom.enemyList.length; i++) {
@@ -260,6 +258,7 @@ io.on('connection', function (socket) {
         updateRoomPlayers(socket.room);
         socket.player.experience = 0;
     });
+
 
     socket.on('enemyMove', function (enemy) {
         var playerRoom = getRoomByName(socket.room);
