@@ -291,6 +291,8 @@
 
 
         tank.healthBar.setPosition(tank.tank.x, tank.tank.y - tank.tank.height / 2);
+        
+        tank.expBar.setPosition(tank.tank.x, tank.tank.y - tank.tank.height / 2 - 10);
 
         game.physics.arcade.overlap(enemies, tank.tank, enemyTankHitPlayer, null, this);
 
@@ -355,6 +357,7 @@
                 friends[i].playerTank.tank.x = playerPosition.x;
                 friends[i].playerTank.tank.y = playerPosition.y;
                 friends[i].playerTank.healthBar.setPosition(playerPosition.x, playerPosition.y - friends[i].playerTank.tank.height / 2);
+                friends[i].playerTank.expBar.setPosition(playerPosition.x, playerPosition.y - friends[i].playerTank.tank.height / 2 - 20);
             }
         }
 
@@ -527,6 +530,7 @@
         }
 
         player.healthBar.kill();
+        player.expBar.kill();
         player.tank.kill();
         player.alive = false;
 
@@ -580,8 +584,24 @@
             animationDuration: 200,
             flipped: false
         };
+        
+        var expBarConfig = {
+            width: 50,
+            height: 6,
+            x: player.x,
+            y: player.y,
+            bg: {
+                color: '#3e3e3d'
+            },
+            bar: {
+                color: '#dee220'
+            },
+            animationDuration: 200,
+            flipped: false
+        };
 
         this.healthBar = new HealthBar(this.game, barConfig);
+        this.expBar = new HealthBar(this.game, expBarConfig);
 
 
         //  The base of friendly tank
