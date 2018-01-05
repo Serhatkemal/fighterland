@@ -811,7 +811,7 @@
             this.tank.body.velocity.y = Math.sin(this.tank.rotation) * this.SPEED;
 
 
-            socket.emit('enemyMove', {id: this.id, x: this.tank.x, y: this.tank.y});
+            socket.emit('enemyMove', {id: this.tank.id, x: this.tank.x, y: this.tank.y});
             this.healthBar.setPosition(this.tank.x, this.tank.y - this.tank.height / 2);
         }
 
