@@ -306,9 +306,8 @@
         enemies.forEach(function (enemyTank) {
             if (enemyTank.alive) {
                 enemiesAlive++;
-                game.physics.arcade.collide(tank, enemyTank.tank);
                 game.physics.arcade.overlap(tank.bullets, enemyTank.tank, bulletHitEnemy, null, this);
-                game.physics.arcade.overlap(enemyTank.tank, tank.tank, enemyTankHitPlayer, null, this);
+                game.physics.arcade.collide(enemyTank.tank, tank.tank, enemyTankHitPlayer, null, this);
                 enemyTank.update();
             }
         });
