@@ -646,6 +646,8 @@
         
         currentWeaponLogo.pendingDestroy = true;
         currentWeaponLogo = game.add.sprite(0, 0, 'bullet' + player.bullet.level);
+        currentWeaponLogo.fixedToCamera = true;
+        currentWeaponLogo.bringToTop();
 
         var healthPercent = (this.health / this.maxHealth) * 100;
         if (healthPercent >= 60) {
