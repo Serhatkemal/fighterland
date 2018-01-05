@@ -503,7 +503,7 @@
         enemies.forEach(function (enemyTank) {
             if (enemyTank.alive && enemyTank.tank.id == enemy.id) {
                 enemyTank.healthBar.kill();
-                enemyTank.kill();
+                enemyTank.tank.kill();
             }
         });
 
