@@ -688,14 +688,7 @@
 
     };
 
-    var cs = 0;
-    var t=setInterval(runFunction,1000);
-    function runFunction(){
-        console.log("Counter is: " + cs);
-    }
-
     EnemyTank.prototype.update = function () {
-        cs++;
         if (isHost) {
 
             // If this missile is dead, don't do any of these calculations
