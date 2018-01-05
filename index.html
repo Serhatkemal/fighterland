@@ -632,7 +632,7 @@
 
     var EnemyTank = function (game, player, enemy) {
 
-        this.tank.id = enemy.id;
+        
         var x = enemy.x;
         var y = enemy.y;
 
@@ -674,7 +674,7 @@
 
         //  The base of friendly tank
         this.tank = game.add.sprite(x, y, 'tank', 'enemy' + enemy.enemyLevel);
-        this.tank.name = player.playerId;
+        this.tank.id = enemy.id;
 
         //  This will force it to decelerate and limit its speed
         game.physics.enable(this.tank, Phaser.Physics.ARCADE);
