@@ -289,7 +289,7 @@
         game.debug.text('FireRate: ' + tank.fireRate, 32, 84);
         game.debug.text('Movement Speed: ' + tank.SPEED, 32, 104);
         game.debug.text('Weapon: ' + tank.bullet.name, 32, 124);
-        game.debug.text('DPS: ' + tank.bullet.damage, 32, 144);
+        game.debug.text('DPS: ' + tank.bullet.damage * (1 / tank.fireRate), 32, 144);
     }
 
     function update() {
