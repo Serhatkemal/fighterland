@@ -307,7 +307,7 @@
             if (enemyTank.alive) {
                 enemiesAlive++;
                 game.physics.arcade.overlap(tank.bullets, enemyTank.tank, bulletHitEnemy, null, this);
-                game.physics.arcade.collide(enemyTank.tank, tank.tank, enemyTankHitPlayer, null, this);
+                game.physics.arcade.overlap(enemyTank.tank, tank.tank, enemyTankHitPlayer, null, this);
                 enemyTank.update();
             }
         });
@@ -902,7 +902,7 @@
 
     function enemyTankHitPlayer(tank, enemyTank) {
 
-        socket.emit('enemyHitPlayer', enemyTank.name);
+        socket.emit('enemyHitPlayer', enemyTank.id);
 
     }
 
