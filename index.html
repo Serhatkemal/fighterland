@@ -705,7 +705,6 @@
         //  The base of friendly tank
         this.tank = game.add.sprite(x, y, 'enemy' + enemy.enemyLevel, 'enemy');
         this.tank.id = enemy.id;
-        this.tank.name = enemy.id;
 
         //  This will force it to decelerate and limit its speed
         game.physics.enable(this.tank, Phaser.Physics.ARCADE);
