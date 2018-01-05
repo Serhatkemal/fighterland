@@ -471,7 +471,7 @@
         var enemyPositionY = data.y;
 
         if (enemies != null) {
-            enemies.forEachAlive(function (enemyTank) {
+            enemies.forEach(function (enemyTank) {
                 if (enemyTank.alive && enemyTank.tank.id == id) {
                     enemyTank.x = enemyPositionX;
                     enemyTank.y = enemyPositionY;
@@ -482,7 +482,7 @@
     });
 
     socket.on('enemyDamaged', function (enemy) {
-        enemies.forEachAlive(function (enemyTank) {
+        enemies.forEach(function (enemyTank) {
             if (enemyTank.alive && enemyTank.tank.id == enemy.id) {
                 enemyTank.health = enemy.health;
                 var healthPercent = (enemyTank.health / enemyTank.maxHealth) * 100;
@@ -500,7 +500,7 @@
 
     socket.on('enemyDestroyed', function (enemy) {
 
-        enemies.forEachAlive(function (enemyTank) {
+        enemies.forEach(function (enemyTank) {
             if (enemyTank.alive && enemyTank.tank.id == enemy.id) {
                 enemyTank.healthBar.kill();
                 enemyTank.kill();
