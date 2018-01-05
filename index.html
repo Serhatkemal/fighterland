@@ -219,6 +219,7 @@
     var land;
 
     var tank;
+    var currentWeaponLogo;
     var friends;
 
     var enemies;
@@ -260,6 +261,10 @@
         }
 
         tank.tank.bringToTop();
+        
+        currentWeaponLogo = game.add.sprite(0, 0, 'bullet1');
+        currentWeaponLogo.fixedToCamera = true;
+        currentWeaponLogo.bringToTop();
 
         showRoundInfo();
 
