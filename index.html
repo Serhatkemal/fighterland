@@ -142,11 +142,11 @@
         //Disable browser focus control.
         game.stage.disableVisibilityChange = true;
 
-        game.load.image('tank', 'assets/games/enemies/enemy1.png');
-        game.load.image('tank1', 'assets/games/enemies/enemy1.png');
+        game.load.spritesheet('tank', 'assets/games/player/player.png', 38, 45, 6);
+        game.load.image('playerAttack', 'assets/games/player/player_attack.png');
         game.load.image('logo', 'assets/games/tanks/logo.png');
         game.load.image('earth', 'assets/games/background/ground.png');
-        game.load.spritesheet('kaboom', 'assets/games/tanks/explosion.png', 64, 64, 23);
+        game.load.spritesheet('kaboom', 'assets/games/enemies/blood-animation.png', 76, 73);
 
         game.load.image('firespeed', 'assets/games/menu/firespeed.png');
         game.load.image('weapon', 'assets/games/menu/weapon.png');
@@ -194,7 +194,8 @@
         game.load.image('bullet39', 'assets/games/bullets/bullet39.png');
         game.load.image('bullet40', 'assets/games/bullets/bullet40.png');
 
-        game.load.image('enemy1', 'assets/games/enemies/enemy1.png');
+        game.load.spritesheet('enemy1', 'assets/games/enemies/enemy1_.png', 73, 73);
+        //game.load.image('enemy1', 'assets/games/enemies/enemy1.png');
         game.load.image('enemy2', 'assets/games/enemies/enemy2.png');
         game.load.image('enemy3', 'assets/games/enemies/enemy3.png');
         game.load.image('enemy4', 'assets/games/enemies/enemy4.png');
@@ -517,7 +518,7 @@
 
         var explosionAnimation = explosions.getFirstExists(false);
         explosionAnimation.reset(enemy.x, enemy.y);
-        explosionAnimation.play('kaboom', 30, false, true);
+        explosionAnimation.play('kaboom', 20, false, true);
 
     });
 
@@ -609,11 +610,12 @@
         this.expBar = new HealthBar(this.game, expBarConfig);
 
 
-        //  The base of friendly tank
         this.tank = game.add.sprite(player.x, player.y, 'tank', 'tank1');
+        var walk = this.tank.animations.add('walk');
+        this.tank.animations.play('walk', 8, true);
+
         this.tank.name = player.playerId;
         this.tank.anchor.setTo(0.5, 0.5);
-        this.tank.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
 
         //  This will force it to decelerate and limit its speed
         game.physics.enable(this.tank, Phaser.Physics.ARCADE);
@@ -703,6 +705,9 @@
 
         //  The base of friendly tank
         this.tank = game.add.sprite(x, y, 'enemy' + enemy.enemyLevel, 'enemy');
+        var walk = this.tank.animations.add('walk');
+        this.tank.animations.play('walk', 8, true);
+
         this.tank.id = enemy.id;
 
         //  This will force it to decelerate and limit its speed
