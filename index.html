@@ -722,7 +722,14 @@
 
     };
 
+    var counterUpdate = 0;
     EnemyTank.prototype.update = function () {
+        counterUpdate++;
+        if(counterUpdate % 2 == 0){
+            return;
+        } else if(counterUpdate == 59){
+            counterUpdate == 1;
+        }
         if (isHost) {
 
             // If this missile is dead, don't do any of these calculations
