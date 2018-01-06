@@ -146,7 +146,9 @@
         game.load.image('playerAttack', 'assets/games/player/player_attack.png');
         game.load.image('logo', 'assets/games/tanks/logo.png');
         game.load.image('earth', 'assets/games/background/ground.png');
+
         game.load.spritesheet('kaboom', 'assets/games/enemies/blood-animation.png', 76, 73);
+        game.load.image('blood', 'assets/games/enemies/blood.png');
 
         game.load.image('firespeed', 'assets/games/menu/firespeed.png');
         game.load.image('weapon', 'assets/games/menu/weapon.png');
@@ -194,26 +196,26 @@
         game.load.image('bullet39', 'assets/games/bullets/bullet39.png');
         game.load.image('bullet40', 'assets/games/bullets/bullet40.png');
 
-        game.load.spritesheet('enemy1', 'assets/games/enemies/enemy1_.png', 73, 73);
+        game.load.spritesheet('enemy1', 'assets/games/enemies/enemy1.png', 40, 40);
         //game.load.image('enemy1', 'assets/games/enemies/enemy1.png');
-        game.load.image('enemy2', 'assets/games/enemies/enemy2.png');
-        game.load.image('enemy3', 'assets/games/enemies/enemy3.png');
-        game.load.image('enemy4', 'assets/games/enemies/enemy4.png');
-        game.load.image('enemy5', 'assets/games/enemies/enemy5.png');
-        game.load.image('enemy6', 'assets/games/enemies/enemy6.png');
-        game.load.image('enemy7', 'assets/games/enemies/enemy7.png');
-        game.load.image('enemy8', 'assets/games/enemies/enemy8.png');
-        game.load.image('enemy9', 'assets/games/enemies/enemy9.png');
-        game.load.image('enemy10', 'assets/games/enemies/enemy10.png');
-        game.load.image('enemy11', 'assets/games/enemies/enemy11.png');
-        game.load.image('enemy12', 'assets/games/enemies/enemy12.png');
-        game.load.image('enemy13', 'assets/games/enemies/enemy13.png');
-        game.load.image('enemy14', 'assets/games/enemies/enemy14.png');
-        game.load.image('enemy15', 'assets/games/enemies/enemy15.png');
-        game.load.image('enemy16', 'assets/games/enemies/enemy16.png');
-        game.load.image('enemy17', 'assets/games/enemies/enemy17.png');
-        game.load.image('enemy18', 'assets/games/enemies/enemy18.png');
-        game.load.image('enemy19', 'assets/games/enemies/enemy19.png');
+        game.load.spritesheet('enemy2', 'assets/games/enemies/enemy2.png', 50, 50);
+        game.load.spritesheet('enemy3', 'assets/games/enemies/enemy3.png', 60, 60);
+        game.load.spritesheet('enemy4', 'assets/games/enemies/enemy4.png', 40, 40);
+        game.load.spritesheet('enemy5', 'assets/games/enemies/enemy5.png', 72, 72);
+        game.load.spritesheet('enemy6', 'assets/games/enemies/enemy6.png', 50, 50);
+        game.load.spritesheet('enemy7', 'assets/games/enemies/enemy1.png', 60, 60);
+        game.load.spritesheet('enemy8', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy9', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy10', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy11', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy12', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy13', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy14', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy15', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy16', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy17', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy18', 'assets/games/enemies/enemy1.png', 73, 73);
+        game.load.spritesheet('enemy19', 'assets/games/enemies/enemy1.png', 73, 73);
 
     }
 
@@ -431,8 +433,9 @@
 
         enemies.forEach(function (enemyTank) {
             if(enemyTank.alive){
-                enemyTank.kill();
+                enemyTank.tank.kill();
                 enemyTank.healthBar.kill();
+                enemyTank.alive = false;
             }
         });
 
@@ -482,8 +485,8 @@
         if (enemies != null) {
             enemies.forEach(function (enemyTank) {
                 if (enemyTank.alive && enemyTank.tank.id == id) {
-                    enemyTank.x = enemyPositionX;
-                    enemyTank.y = enemyPositionY;
+                    enemyTank.tank.x = enemyPositionX;
+                    enemyTank.tank.y = enemyPositionY;
                     enemyTank.healthBar.setPosition(enemyPositionX, enemyPositionY);
                 }
             });
@@ -513,6 +516,7 @@
             if (enemyTank.alive && enemyTank.tank.id == enemy.id) {
                 enemyTank.healthBar.kill();
                 enemyTank.tank.kill();
+                enemyTank.alive = false;
             }
         });
 
@@ -703,7 +707,7 @@
 
          this.healthBar = new HealthBar(this.game, barConfig);
 
-        //  The base of friendly tank
+        //  The base of enemy tank
         this.tank = game.add.sprite(x, y, 'enemy' + enemy.enemyLevel, 'enemy');
         var walk = this.tank.animations.add('walk');
         this.tank.animations.play('walk', 8, true);
@@ -722,13 +726,12 @@
 
     };
 
-    var counterUpdate = 0;
+    var updateCounter = 0;
     EnemyTank.prototype.update = function () {
-        counterUpdate++;
-        if(counterUpdate % 2 == 0){
+        if(updateCounter % 2 == 1){
             return;
-        } else if(counterUpdate == 59){
-            counterUpdate == 1;
+        } else if(updateCounter % 2 == 50){
+            updateCounter = 0;
         }
         if (isHost) {
 
