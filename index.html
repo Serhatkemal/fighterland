@@ -760,9 +760,9 @@
 
     var updateCounter = 0;
     EnemyTank.prototype.update = function () {
-        if(updateCounter % 3 != 1){
+        if(updateCounter % 3 != 0){
             return;
-        } else if(updateCounter == 61){
+        } else if(updateCounter == 60){
             updateCounter = 0;
         }
         if (isHost) {
