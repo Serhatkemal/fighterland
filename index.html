@@ -482,12 +482,14 @@
         var id = data.id;
         var enemyPositionX = data.x;
         var enemyPositionY = data.y;
+        var enemyRotation = data.rotation;
 
         if (enemies != null) {
             enemies.forEach(function (enemyTank) {
                 if (enemyTank.alive && enemyTank.tank.id == id) {
                     enemyTank.tank.x = enemyPositionX;
                     enemyTank.tank.y = enemyPositionY;
+                    enemyTank.tank.rotation = enemyRotation;
                     enemyTank.healthBar.setPosition(enemyPositionX, enemyPositionY);
                 }
             });
@@ -826,7 +828,7 @@
             this.tank.body.velocity.y = Math.sin(this.tank.rotation) * this.SPEED;
 
 
-            socket.emit('enemyMove', {id: this.tank.id, x: this.tank.x, y: this.tank.y});
+            socket.emit('enemyMove', {id: this.tank.id, x: this.tank.x, y: this.tank.y, rotation: this.tank.rotation});
             this.healthBar.setPosition(this.tank.x, this.tank.y - this.tank.height / 2);
         }
 

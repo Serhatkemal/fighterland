@@ -31,6 +31,7 @@ var Player = function (playerId) {
     this.playerId = playerId;
     this.x = 0;
     this.y = 0;
+    this.rotation = 0;
     this.health = 20;
     this.maxHealth = 20;
     this.fireRate = 1000;  // player fireRate 1 shot per fireRate
@@ -46,6 +47,7 @@ var Enemy = function (id, x, y, health, maxHealth, SPEED, damage, enemyLevel) {
     this.id = id;
     this.x = x;
     this.y = y;
+    this.rotation = 0;
     this.health = health;
     this.maxHealth = maxHealth;
     this.alive = true;
@@ -267,6 +269,7 @@ io.on('connection', function (socket) {
             if (playerRoom.enemyList[i].id == enemy.id) {
                 playerRoom.enemyList[i].x = enemy.x;
                 playerRoom.enemyList[i].y = enemy.y;
+                playerRoom.enemyList[i].rotation = enemy.rotation;
             }
         }
         socket.to(socket.room).emit('enemyMove', enemy);
