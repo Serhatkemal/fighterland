@@ -758,12 +758,13 @@
 
     };
 
-    var updateCounter = 0;
+    var updateCounter = 1;
     EnemyTank.prototype.update = function () {
-        if(updateCounter % 3 != 0){
+        updateCounter++;
+        if(updateCounter % 2 != 0){
             return;
         } else if(updateCounter == 60){
-            updateCounter = 0;
+            updateCounter = 1;
         }
         if (isHost) {
 
