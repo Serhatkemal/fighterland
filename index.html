@@ -336,14 +336,14 @@
             tank.tank.body.velocity.y = tank.SPEED;
         }
 
-        if (tank.tank.body.velocity.x != 0 || tank.tank.body.velocity.y != 0) {
-            socket.emit('playerMove', {x: tank.tank.x, y: tank.tank.y});
-        }
-
         land.tilePosition.x = -game.camera.x;
         land.tilePosition.y = -game.camera.y;
 
         tank.tank.rotation = game.physics.arcade.angleToPointer(tank.tank);
+
+        if (tank.tank.body.velocity.x != 0 || tank.tank.body.velocity.y != 0) {
+            socket.emit('playerMove', {x: tank.tank.x, y: tank.tank.y, rotation: tank.tank.rotation});
+        }
 
         if (game.input.activePointer.isDown && tank.alive) {
             //  Boom!
@@ -364,6 +364,7 @@
             if (friends[i].playerTank.alive && friends[i].playerTank.tank.name == playerId) {
                 friends[i].playerTank.tank.x = playerPosition.x;
                 friends[i].playerTank.tank.y = playerPosition.y;
+                friends[i].playerTank.tank.rotation = playerPosition.rotation;
                 friends[i].playerTank.healthBar.setPosition(playerPosition.x, playerPosition.y - friends[i].playerTank.tank.height / 2);
                 friends[i].playerTank.expBar.setPosition(playerPosition.x, playerPosition.y - friends[i].playerTank.tank.height / 2 - 20);
             }

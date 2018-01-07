@@ -217,10 +217,11 @@ io.on('connection', function (socket) {
         sendCurrentRoundInfo(socket.room);
     });
 
-    socket.on('playerMove', function (position) {
-        socket.player.x = position.x;
-        socket.player.y = position.y;
-        socket.to(socket.room).emit('playerMove', {playerPosition: position, playerId: socket.id});
+    socket.on('playerMove', function (playerPosition) {
+        socket.player.x = playerPosition.x;
+        socket.player.y = playerPosition.y;
+        socket.player.rotation = playerPosition.rotation;
+        socket.to(socket.room).emit('playerMove', {playerPosition: playerPosition, playerId: socket.id});
     });
 
     socket.on('playerFire', function (positionData) {
