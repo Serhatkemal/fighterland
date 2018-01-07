@@ -52,7 +52,7 @@
 
     </style>
 </head>
-<body background="assets/games/tanks/scorched_earth.png">
+<body background="assets/games/background/ground.jpg">
 <div id="loginDiv" class="center"
      style="border-style: solid; border-width: 5px; border-radius: 12px; padding: 10px; background-color: #4c4039; border-color: transparent">
     <h3>Rooms</h3>
@@ -145,7 +145,7 @@
         game.load.spritesheet('tank', 'assets/games/player/player.png', 38, 45, 6);
         game.load.image('playerAttack', 'assets/games/player/player_attack.png');
         game.load.image('logo', 'assets/games/tanks/logo.png');
-        game.load.image('earth', 'assets/games/background/ground.png');
+        game.load.image('earth', 'assets/games/background/ground.jpg');
 
         game.load.spritesheet('kaboom', 'assets/games/enemies/blood-animation.png', 76, 73);
         game.load.image('blood', 'assets/games/enemies/blood.png');
@@ -229,6 +229,7 @@
     var enemiesTotal = 0;
     var enemiesAlive = 0;
     var explosions;
+    var bloodAnimations;
 
     var logo;
 
@@ -257,10 +258,20 @@
         //  Explosion pool
         explosions = game.add.group();
 
-        for (var i = 0; i < 10; i++) {
+
+        for (var i = 0; i < 20; i++) {
             var explosionAnimation = explosions.create(0, 0, 'kaboom', [0], false);
             explosionAnimation.anchor.setTo(0.5, 0.5);
             explosionAnimation.animations.add('kaboom');
+        }
+
+        //  Blood Animations
+        bloodAnimations = game.add.group();
+
+        for (var i = 0; i < 50; i++) {
+            var bloodAnimation = bloodAnimations.create(0, 0, 'blood', [0], false);
+            bloodAnimation.anchor.setTo(0.5, 0.5);
+            bloodAnimation.animations.add('blood');
         }
 
         tank.tank.bringToTop();
@@ -310,7 +321,7 @@
             if (enemyTank.alive) {
                 enemiesAlive++;
                 game.physics.arcade.overlap(tank.bullets, enemyTank.tank, bulletHitEnemy, null, this);
-                game.physics.arcade.overlap(enemyTank.tank, tank.tank, enemyTankHitPlayer, null, this);
+                game.physics.arcade.overlap(tank.tank, enemyTank.tank, enemyTankHitPlayer, null, this);
                 enemyTank.update();
             }
         });
@@ -527,6 +538,15 @@
         explosionAnimation.reset(enemy.x, enemy.y);
         explosionAnimation.play('kaboom', 20, false, true);
 
+        explosionAnimation.events.onAnimationComplete = new Phaser.Signal();
+        explosionAnimation.events.onAnimationComplete.addOnce(
+            function () {
+                var bloodAnimation = bloodAnimations.getFirstExists(false);
+                bloodAnimation.reset(enemy.x, enemy.y);
+                bloodAnimation.play('blood', 0.1, false, true);
+            }
+        );
+
     });
 
     socket.on('playerDestroyed', function (playerId) {
@@ -550,6 +570,15 @@
         var explosionAnimation = explosions.getFirstExists(false);
         explosionAnimation.reset(player.tank.x, player.tank.y);
         explosionAnimation.play('kaboom', 30, false, true);
+
+        explosionAnimation.events.onAnimationComplete = new Phaser.Signal();
+        explosionAnimation.events.onAnimationComplete.addOnce(
+            function () {
+                var bloodAnimation = bloodAnimations.getFirstExists(false);
+                bloodAnimation.reset(player.tank.x, player.tank.y);
+                bloodAnimation.play('blood', 0.1, false, true);
+            }
+        );
 
     });
 
